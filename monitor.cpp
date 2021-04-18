@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
+#include <vector>
 #include <raspicam/raspicam.h>
 
 // Where to grab the pixels
@@ -29,18 +30,28 @@ int main (int argc, char **argv){
 	}
 
     // Wait until the camera stabilises
+	std::cout << "Waiting for camera stabilisation..." << std::endl;
     usleep(3*1000000);
 
     // Capture a photo
+	std::cout << "Taking initial photo..." << std::endl;
     Camera.grab();
 
     // Allocate memory
     unsigned char *data = new unsigned char[Camera.getImageTypeSize(raspicam::RASPICAM_FORMAT_RGB)];
+	int imageWidth = Camera.getWidth();
+	int imageHeight = Camera.getHeight();
 
     // Extract the image in rgb format
     Camera.retrieve(data, raspicam::RASPICAM_FORMAT_RGB);
 
 	// Draw the locations of the grab points
+	for (unsigned int i=0; i<grabLocs.size(); i++){
+		int pos = 3*(grabLocs[i][1]*imageWidth + grabLocs[i][0]);
+		data[pos] = char(0);
+		data[pos+1] = char(255);
+		data[pos+2] = char(0);
+	}
 
     // Save the initial image to file
     std::ofstream outFile("initial.ppm", std::ios::binary);
