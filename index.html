@@ -1,0 +1,80 @@
+ <!DOCTYPE html>
+<html>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+	html, body {
+		width: 100%;
+		height: 100%;
+	}
+	#centreDiv {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 90%;
+	}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+
+	// Once everything is loaded
+	window.onload = function () {
+
+		// Create the callback when the JSON file is recieved
+		var xmlhttp = new XMLHttpRequest();
+		xmlhttp.onreadystatechange = function() {
+			if (this.readyState == 4 && this.status == 200) {
+
+				// Parse the JSON
+				var obj = JSON.parse(this.responseText);
+
+				// Populate both arrays (x and y data)
+				var times = [];
+				var points = [];
+				for (var i=0; i<obj.length; i++){
+					var time = new Date(obj[i]["d"]);
+					times.push(time.toLocaleString());
+					points.push(obj[i]["v"]);
+				}
+
+				// Combine the two above arrays
+				var data = {
+					labels: times,
+					datasets: [{
+							label: "Boiler Level",
+							backgroundColor: 'rgb(255, 99, 132)',
+							borderColor: 'rgb(255, 99, 132)',
+							data: points,
+						}]
+				};
+
+				// Chart config
+				var config = {
+					type: 'line',
+					data,
+					options: {}
+				};
+
+				// Load the chart
+				var myChart = new Chart(
+					document.getElementById('myChart'),
+					config
+				);
+
+			}
+
+		};
+
+		// Ask for the JSON dataset
+		xmlhttp.open("GET", "data.json", true);
+		xmlhttp.send();
+
+	}
+
+</script>
+<body>
+	<div id="centreDiv">
+		<canvas id="myChart" width=1vw height=1vh></canvas>
+	</div>
+</body>
+</html> 
