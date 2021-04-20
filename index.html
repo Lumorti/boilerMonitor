@@ -21,6 +21,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 
+	var maxToShow = 100;
+
 	// Once everything is loaded
 	window.onload = function () {
 
@@ -31,6 +33,10 @@
 
 				// Parse the JSON
 				var dataLines = this.responseText.split("\n");
+
+				if (dataLines.length > maxToShow){
+					dataLines.splice(0, dataLines.length-maxToShow);
+				}
 
 				// Populate both arrays (x and y data)
 				var times = [];
@@ -57,7 +63,19 @@
 				var config = {
 					type: 'line',
 					data,
-					options: {}
+					options: {
+						scales: {
+							y: {
+								min: 0,
+								max: 5,
+							},
+							x: {
+								ticks: {
+									display: false
+								}
+							}
+						}
+					}
 				};
 
 				// Load the chart

@@ -14,7 +14,13 @@ std::vector<std::vector<int>> grabLocs = {{900, 392},
 										  {607, 534}};
 
 // Minimum brightness to be active
-int minBright = 200;
+int minBrightDay = 300;
+int minBrightNight = 200;
+int minBright = minBrightDay;
+
+// Checking if it's day/night
+int dayBright = 100;
+std::vector<int> dayLoc = {1178, 364};
 
 // Current boiler level
 int level = -1;
@@ -63,40 +69,60 @@ int main (int argc, char **argv){
 	std::ofstream dataFile;
 	dataFile.open("data.txt", std::ios_base::app);
 
-	// Keep checking because of the flashing
-	level = 5;
-	for (int j=0; j<10; j++){
+	// Loop forever
+	int pos = 0;
+	int bright = 0;
+	int temp = 0;
+	while (true){
 
-		// Take an image
-		Camera.grab();
-		Camera.retrieve(data);
+		// Keep checking because of the flashing
+		level = 5;
+		for (int j=0; j<10; j++){
 
-		// Get the level
-		int temp = 0;
-		for (int i=0; i<grabLocs.size(); i++){
-			int pos = 3*(grabLocs[i][1]*imageWidth + grabLocs[i][0]);
-			int bright = sqrt(pow(data[pos+0],2)+pow(data[pos+1],2)+pow(data[pos+2],2));
-			std::cout << i+1 << " " << bright << std::endl;
-			if (bright > minBright && i+1 > temp){
-				temp = i+1;
+			// Take an image
+			Camera.grab();
+			Camera.retrieve(data);
+
+			// Is it day or night?
+			pos = 3*(dayLoc[1]*imageWidth + dayLoc[0]);
+			bright = sqrt(pow(data[pos+0],2)+pow(data[pos+1],2)+pow(data[pos+2],2));
+			if (bright > dayBright){
+				minBright = minBrightDay;
+			} else {
+				minBright = minBrightNight;
 			}
+
+			// Get the level
+			temp = 0;
+			for (int i=0; i<grabLocs.size(); i++){
+				pos = 3*(grabLocs[i][1]*imageWidth + grabLocs[i][0]);
+				bright = sqrt(pow(data[pos+0],2)+pow(data[pos+1],2)+pow(data[pos+2],2));
+				//std::cout << i+1 << " " << bright << " " << minBright << std::endl;
+				if (bright > minBright && i+1 > temp){
+					temp = i+1;
+				}
+			}
+
+			// Is this level the lowest at the moment
+			//std::cout << "temp " << temp << std::endl;
+			if (temp < level){
+				level = temp;
+			}
+
+			// Wait between captures
+			usleep(0.2e6);
+
 		}
 
-		// Is this level the lowest at the moment
-		std::cout << "temp " << temp << std::endl;
-		if (temp < level){
-			level = temp;
-		}
+		// Get the time
+		std::time_t result = std::time(nullptr);
+		std::cout << result << " " << level << std::endl;
+		dataFile << result << " " << level << std::endl;
 
 		// Wait between captures
-		usleep(0.2e6);
+		usleep(60e6);
 
 	}
-
-	// Get the time
-	std::time_t result = std::time(nullptr);
-	std::cout << result << " " << level << std::endl;
-	dataFile << result << " " << level << std::endl;
 
     // Clean up
     delete data;
