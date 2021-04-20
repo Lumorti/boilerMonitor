@@ -3,17 +3,18 @@
 #include <iostream>
 #include <unistd.h>
 #include <vector>
+#include <math.h>
 #include <raspicam/raspicam.h>
 
 // Where to grab the pixels
-std::vector<std::vector<int>> grabLocs = {{100, 100}, 
-										  {100, 200}, 
-										  {100, 300}, 
-										  {100, 400}, 
-										  {100, 500}};
+std::vector<std::vector<int>> grabLocs = {{900, 392}, 
+										  {824, 436}, 
+										  {753, 472}, 
+										  {680, 505}, 
+										  {607, 534}};
 
-// Minimum colour to be active
-std::vector<int> minCol = {255, 0, 0};
+// Minimum brightness to be active
+int minBright = 200;
 
 // Current boiler level
 int level = -1;
@@ -23,7 +24,7 @@ int main (int argc, char **argv){
 
 	// Init the camera
     raspicam::RaspiCam Camera;
-	std::cout << "Opening Camera..." << std::endl;
+	std::cout << "Opening camera..." << std::endl;
     if (!Camera.open()){
 		std::cerr << "Error opening camera" << std::endl;
 		return -1;
@@ -43,7 +44,7 @@ int main (int argc, char **argv){
 	int imageHeight = Camera.getHeight();
 
     // Extract the image in rgb format
-    Camera.retrieve(data, raspicam::RASPICAM_FORMAT_RGB);
+    Camera.retrieve(data);
 
 	// Draw the locations of the grab points
 	for (unsigned int i=0; i<grabLocs.size(); i++){
@@ -58,9 +59,47 @@ int main (int argc, char **argv){
     outFile << "P6\n" << Camera.getWidth() << " " << Camera.getHeight() << " 255\n";
     outFile.write((char*) data, Camera.getImageTypeSize(raspicam::RASPICAM_FORMAT_RGB));
 
+	// Open the data file to write to
+	std::ofstream dataFile;
+	dataFile.open("data.txt", std::ios_base::app);
+
+	// Keep checking because of the flashing
+	level = 5;
+	for (int j=0; j<10; j++){
+
+		// Take an image
+		Camera.grab();
+		Camera.retrieve(data);
+
+		// Get the level
+		int temp = 0;
+		for (int i=0; i<grabLocs.size(); i++){
+			int pos = 3*(grabLocs[i][1]*imageWidth + grabLocs[i][0]);
+			int bright = sqrt(pow(data[pos+0],2)+pow(data[pos+1],2)+pow(data[pos+2],2));
+			std::cout << i+1 << " " << bright << std::endl;
+			if (bright > minBright && i+1 > temp){
+				temp = i+1;
+			}
+		}
+
+		// Is this level the lowest at the moment
+		std::cout << "temp " << temp << std::endl;
+		if (temp < level){
+			level = temp;
+		}
+
+		// Wait between captures
+		usleep(0.2e6);
+
+	}
+
+	// Get the time
+	std::time_t result = std::time(nullptr);
+	std::cout << result << " " << level << std::endl;
+	dataFile << result << " " << level << std::endl;
+
     // Clean up
     delete data;
     return 0;
 
 }
-//

@@ -5,6 +5,9 @@
 	html, body {
 		width: 100%;
 		height: 100%;
+		margin: 0;
+		padding: 0;
+		overflow: hidden;
 	}
 	#centreDiv {
 		position: absolute;
@@ -12,6 +15,7 @@
 		left: 50%;
 		transform: translate(-50%, -50%);
 		width: 90%;
+		max-width: 750px;
 	}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -26,15 +30,16 @@
 			if (this.readyState == 4 && this.status == 200) {
 
 				// Parse the JSON
-				var obj = JSON.parse(this.responseText);
+				var dataLines = this.responseText.split("\n");
 
 				// Populate both arrays (x and y data)
 				var times = [];
 				var points = [];
-				for (var i=0; i<obj.length; i++){
-					var time = new Date(obj[i]["d"]);
+				for (var i=0; i<dataLines.length-1; i++){
+					var split = dataLines[i].split(" ");
+					var time = new Date(parseInt(split[0])*1000);
 					times.push(time.toLocaleString());
-					points.push(obj[i]["v"]);
+					points.push(parseInt(split[1]));
 				}
 
 				// Combine the two above arrays
@@ -66,7 +71,7 @@
 		};
 
 		// Ask for the JSON dataset
-		xmlhttp.open("GET", "data.json", true);
+		xmlhttp.open("GET", "data.txt", true);
 		xmlhttp.send();
 
 	}
@@ -74,7 +79,7 @@
 </script>
 <body>
 	<div id="centreDiv">
-		<canvas id="myChart" width=1vw height=1vh></canvas>
+		<canvas id="myChart" width=100vw height=100vh></canvas>
 	</div>
 </body>
 </html> 
