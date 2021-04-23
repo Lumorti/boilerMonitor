@@ -7,20 +7,14 @@
 #include <raspicam/raspicam.h>
 
 // Where to grab the pixels
-std::vector<std::vector<int>> grabLocs = {{900, 392}, 
-										  {824, 436}, 
-										  {753, 472}, 
-										  {680, 505}, 
-										  {607, 534}};
+std::vector<std::vector<int>> grabLocs = {{859, 393}, 
+										  {782, 446}, 
+										  {708, 490}, 
+										  {633, 527}, 
+										  {557, 561}};
 
 // Minimum brightness to be active
-int minBrightDay = 300;
-int minBrightNight = 200;
-int minBright = minBrightDay;
-
-// Checking if it's day/night
-int dayBright = 100;
-std::vector<int> dayLoc = {1178, 364};
+int minBright = 240;
 
 // Current boiler level
 int level = -1;
@@ -61,9 +55,9 @@ int main (int argc, char **argv){
 	}
 
     // Save the initial image to file
-    std::ofstream outFile("initial.ppm", std::ios::binary);
-    outFile << "P6\n" << Camera.getWidth() << " " << Camera.getHeight() << " 255\n";
-    outFile.write((char*) data, Camera.getImageTypeSize(raspicam::RASPICAM_FORMAT_RGB));
+	std::ofstream outFile("initial.ppm", std::ios::binary);
+	outFile << "P6\n" << Camera.getWidth() << " " << Camera.getHeight() << " 255\n";
+	outFile.write((char*) data, Camera.getImageTypeSize(raspicam::RASPICAM_FORMAT_RGB));
 
 	// Open the data file to write to
 	std::ofstream dataFile;
@@ -82,29 +76,24 @@ int main (int argc, char **argv){
 			// Take an image
 			Camera.grab();
 			Camera.retrieve(data);
-
-			// Is it day or night?
-			pos = 3*(dayLoc[1]*imageWidth + dayLoc[0]);
-			bright = sqrt(pow(data[pos+0],2)+pow(data[pos+1],2)+pow(data[pos+2],2));
-			if (bright > dayBright){
-				minBright = minBrightDay;
-			} else {
-				minBright = minBrightNight;
+			if (argc > 1){
+				std::cout << "-------" << std::endl;
 			}
 
 			// Get the level
 			temp = 0;
 			for (int i=0; i<grabLocs.size(); i++){
 				pos = 3*(grabLocs[i][1]*imageWidth + grabLocs[i][0]);
-				bright = sqrt(pow(data[pos+0],2)+pow(data[pos+1],2)+pow(data[pos+2],2));
-				//std::cout << i+1 << " " << bright << " " << minBright << std::endl;
+				bright = data[pos+2];
+				if (argc > 1){
+					std::cout << i+1 << " " << bright << " " << minBright << std::endl;
+				}
 				if (bright > minBright && i+1 > temp){
 					temp = i+1;
 				}
 			}
 
 			// Is this level the lowest at the moment
-			//std::cout << "temp " << temp << std::endl;
 			if (temp < level){
 				level = temp;
 			}
@@ -116,7 +105,10 @@ int main (int argc, char **argv){
 
 		// Get the time
 		std::time_t result = std::time(nullptr);
-		std::cout << result << " " << level << std::endl;
+		if (argc > 1){
+			std::cout << "-------" << std::endl;
+			std::cout << result << " " << level << std::endl;
+		}
 		dataFile << result << " " << level << std::endl;
 
 		// Wait between captures
